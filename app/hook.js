@@ -142,7 +142,7 @@ export function naturalize(text) {
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const clean = (t) => String(t || "").replace(/\s*#Shorts$/, "").replace(/\s+\(.*\)$/, "").replace(/\s*·\s*Part \d+$/i, "").trim();
 const isContent = (l) => l.kind === "media" && !l.tip;
-const LEAD = /^(Why it matters|The catch|By the numbers|The takeaway|Here's the catch|Here's that number|Here's why it matters|So here's what to do):\s*/i;
+const LEAD = /^(Why it matters|The catch|By the numbers|The takeaway|Here's the catch|Here's that number|Here's why it matters|So here's what to do|Here's the move|Your next step|What to do about it):\s*/i;
 const body = (t) => t.replace(LEAD, "");
 const relead = (text, lead) => { const b = body(text); return `${lead} ${/^(The|A|An|It|Its|They|Their|This|These|Many|Most|Some|In|On|When|If|As|For|There|Each|One|People|Lenders|Banks|Investors)\b/.test(b) ? b[0].toLowerCase() + b.slice(1) : b}`; };
 
@@ -189,6 +189,24 @@ export function smartHooks(script) {
   return out;
 }
 
+// Spoken lead-ins, several ways each (v65). Measured on 33 scripts: "So here's what to do:" opened the tip in 31,
+// "Simply put," the definition in 19, "Tell me in the comments." ended 15 and "Bottom line:" came in 13, so a
+// follower heard the same scaffolding in nearly every video. Each video picks one phrasing per role from its
+// subject (the same subject always reads the same way; different subjects differ). null = no lead-in at all.
+export const LEADINS = {
+  tip: ["So here's what to do:", "Here's the move:", "Your next step:", "What to do about it:"],
+  define: ["Simply put,", null, "Put plainly,", null],
+  stance: ["Bottom line:", "The big picture:", "What it comes down to:"],
+  ask: ["Tell me in the comments.", "Drop it in the comments.", "Let me know below."],
+};
+export const TIP_LEAD = /^(?:So here's what to do|Here's the move|Your next step|What to do about it):\s*/i;
+export const STANCE_LEAD = /^(?:Bottom line|The big picture|What it comes down to):\s*/i;
+export function leadinsFor(name) {
+  const seed = [...String(name || "").toLowerCase()].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0, 2166136261);
+  // Different roles step through their lists at different rates, so the combinations vary too.
+  return Object.fromEntries(Object.entries(LEADINS).map(([k, list], i) => [k, list[Math.floor(seed / (i * 7 + 1)) % list.length]]));
+}
+
 const GENERIC_HOOK = /explained in|here's what it actually means|really means, in plain English|here's the quick version|Here's what it actually (means|does)/i;
 
 // Applies the emotion layer to a finished script (once). Hand-written hooks (evergreen topics, ideas
@@ -200,6 +218,7 @@ export function dramatize(script, opts = {}) {
   script.hookKind = { quiz: "quiz", news: "news", market: "market" }[script.kind] || "written";
   const lines = script.lines, hook = lines[0];
   const deep = length === "deep" || length === "full" || script.deep;
+  const say = leadinsFor(clean(script.topicTitle || script.title) || script.kind);
 
   // 1. The hook. A promise ("the catch", "one number") is only made if a later line keeps it.
   if (["custom", "idea"].includes(script.kind) && GENERIC_HOOK.test(hook.text)) {
@@ -219,7 +238,7 @@ export function dramatize(script, opts = {}) {
     if (l.kind !== "media" || l.payoff) continue;
     if (/^Why it matters:/i.test(l.text)) l.text = relead(l.text, "Here's why it matters:");
     else if (/^The catch:/i.test(l.text)) l.text = relead(l.text, "But here's the catch:");
-    else if (/^The takeaway:/i.test(l.text)) { const b = body(l.text); l.text = "So here's what to do: " + (/^[A-Z][a-z]/.test(b) && !/^I\b/.test(b) ? b[0].toLowerCase() + b.slice(1) : b); l.payoff = l.payoff || !lines.some((x) => x.payoff); }
+    else if (/^The takeaway:/i.test(l.text)) { const b = body(l.text); l.text = say.tip + " " + (/^[A-Z][a-z]/.test(b) && !/^I\b/.test(b) ? b[0].toLowerCase() + b.slice(1) : b); l.tip = true; l.payoff = l.payoff || !lines.some((x) => x.payoff); }
   }
   // 2b. Plain spoken English for every line of the story (lines you edit yourself aren't touched).
   const topicName = clean(script.topicTitle || script.title);
@@ -230,8 +249,8 @@ export function dramatize(script, opts = {}) {
   }
   // The definition is said the way a person would explain it.
   const def = lines.find((l, i) => i > 0 && i <= 2 && l.kind === "media" && (l.role === "definition" || new RegExp("^(?:an?|the)?\\s*" + topicName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "s?\\s+(?:is|are)\\s+(?:an?|the)\\b", "i").test(l.text)));
-  if (def && def.text.split(/\s+/).length <= 24 && !/^Simply put/.test(def.text) && !/^[A-Z]{2}|^[A-Z][a-z]+ [A-Z]/.test(def.text) && !script.person) {
-    def.claim = def.claim || def.text; def.text = "Simply put, " + def.text[0].toLowerCase() + def.text.slice(1);
+  if (say.define && def && def.text.split(/\s+/).length <= 24 && !/^(Simply put|Put plainly)/.test(def.text) && !/^[A-Z]{2}|^[A-Z][a-z]+ [A-Z]/.test(def.text) && !script.person) {
+    def.claim = def.claim || def.text; def.text = say.define + " " + def.text[0].toLowerCase() + def.text.slice(1);
   }
   // The optional lines (bottom line, comment question) only go in if the video still fits its length:
   // about 2.5 spoken words a second, less a little for the pauses between lines.
@@ -242,10 +261,10 @@ export function dramatize(script, opts = {}) {
   const fits = (text) => deep || wordsIn() + text.split(/\s+/).length <= MAX_S * wps - lines.length * 0.6;
   // 2c. A clear position before the takeaway ("Bottom line: …"), for subjects with a well-supported one.
   const stance = !script.person && !deep && script.kind !== "quiz" && length !== "short" && STANCES.find(([re]) => re.test(topicName))?.[1];
-  if (stance && fits("Bottom line: " + stance) && !lines.some((l) => /^(bottom line|remember)\b/i.test(l.text))) {
-    const tipAt = lines.findIndex((l, i) => i > 0 && l.kind === "media" && (l.tip || /^So here's what to do/.test(l.text)));
+  if (stance && fits(say.stance + " " + stance) && !lines.some((l) => l.stance || STANCE_LEAD.test(l.text) || /^remember\b/i.test(l.text))) {
+    const tipAt = lines.findIndex((l, i) => i > 0 && l.kind === "media" && (l.tip || TIP_LEAD.test(l.text)));
     const at = tipAt > 0 ? tipAt : lines.findIndex((l) => l.kind === "outro");
-    if (at > 1) lines.splice(at, 0, { text: "Bottom line: " + stance, visual: "", kind: "media", chart: null, stance: true, optional: true });
+    if (at > 1) lines.splice(at, 0, { text: say.stance + " " + stance, visual: "", kind: "media", chart: null, stance: true, optional: true });
   }
   // 3. Pacing: the hook is delivered with a little more energy, then a beat; a beat before the payoff.
   hook.pace = hook.pace || 1.05;
@@ -270,7 +289,8 @@ export function dramatize(script, opts = {}) {
       : script.kind === "news" ? "Which of these matters most to you? Tell me in the comments."
       : script.kind === "market" ? "Buying, holding or waiting right now? Tell me in the comments."
       : QUESTIONS.find(([re]) => re.test(topic) || re.test(script.title || ""))?.[1] || NICHE_QUESTIONS[script.niche] || NICHE_QUESTIONS["personal finance"];
-    if (fits(q)) lines.splice(outro, 0, { text: q, visual: "", kind: "media", chart: null, question: true, optional: true });
+    const asked = q.replace(/Tell me in the comments\.$/, say.ask);
+    if (fits(asked)) lines.splice(outro, 0, { text: asked, visual: "", kind: "media", chart: null, question: true, optional: true });
   }
   return script;
 }

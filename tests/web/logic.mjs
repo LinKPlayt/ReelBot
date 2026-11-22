@@ -246,7 +246,7 @@ export default async function ({ t, newPage }) {
   t.ok(/fell across the board/.test(r.mood[0]) && /barely moved/.test(r.mood[1]) && /mixed/.test(r.mood[2]), "market recaps say how the day went", JSON.stringify(r.mood));
   t.ok(/\bcatch\b/i.test(r.drama[0][0]) && /^Here's the catch: many/.test(r.drama[2][0]) && r.drama[2][1], "a hook that promises the catch is paid off by the catch line", JSON.stringify(r.drama.map((x) => x[0])));
   t.ok(r.drama[0][2] >= 0.3 && r.drama[1][2] >= 0.25, "a beat after the hook and before the payoff", JSON.stringify(r.drama.map((x) => x[2])));
-  t.ok(/^Bottom line: /.test(r.drama[3][0]) && /^So here's what to do: never/.test(r.drama[4][0]), "a clear bottom line, then the takeaway, spoken naturally", JSON.stringify(r.drama.map((x) => x[0])));
+  t.ok(/^(?:Bottom line|The big picture|What it comes down to): /.test(r.drama[3][0]) && /^(?:So here's what to do|Here's the move|Your next step|What to do about it): never/.test(r.drama[4][0]), "a clear bottom line, then the takeaway, spoken naturally", JSON.stringify(r.drama.map((x) => x[0])));
   t.ok(r.drama[5][3] && /comments/.test(r.drama[5][0]) && r.drama.length === 7, "a comment question sits right before the ending", JSON.stringify(r.drama.map((x) => x[0])));
   t.ok(r.dramaShort === 5 && r.dramaComment === 6 && r.dramaTwice === 7, "no question or bottom line on short reels, no question with an Ask-a-question ending; applied once", [r.dramaShort, r.dramaComment, r.dramaTwice].join());
   t.ok(r.natural.join("|") === "Stablecoins are usually non-interest bearing and so don't provide returns.|Lenders decide who they are.|He's the CEO, and it isn't cheap.|He said \"it is not\" so.", "plain spoken English keeps the meaning (and quotes)", r.natural.join("|"));
@@ -716,5 +716,21 @@ export default async function ({ t, newPage }) {
   t.ok(v64.art.join() === "beach,umbrella,briefcase,globe,target,chartUp,calculator,document,bitcoin,chartDown,lock",
     "the drawing fits what the line means: Social Security isn't a padlock, \"build\" isn't a hammer, \"career\" isn't a heart, \"goods\" isn't a thumbs-up, \"triple\" isn't a plane", v64.art.join());
   t.ok(v64.held, "the meaning model stays loaded while a second reel still needs it (photo judging no longer lost in a batch)");
+
+  t.section("Logic: the same scaffolding doesn't open every video (v65)");
+  const v65 = await page.evaluate(async () => {
+    const H = await import("./app/hook.js");
+    const topics = ["Roth IRA", "Index fund", "Inflation", "Mortgage", "Credit score", "Stablecoin", "Bitcoin", "Dividend", "Bond", "Annuity", "Payday loan", "Recession"];
+    const tips = topics.map((t) => H.leadinsFor(t).tip), defs = topics.map((t) => H.leadinsFor(t).define);
+    const same = H.leadinsFor("Roth IRA").tip === H.leadinsFor("roth ira").tip;
+    const sc = { title: "Credit card", kind: "custom", lines: [{ text: "Credit card, explained in thirty seconds.", kind: "media" }, { text: "A credit card is a payment card.", kind: "media" },
+      { text: "The takeaway: Pay more than the minimum when you can.", kind: "media", tip: false }, { text: "Follow.", kind: "outro" }] };
+    H.dramatize(sc);
+    const tip = sc.lines.find((l) => H.TIP_LEAD.test(l.text));
+    return { tipKinds: new Set(tips).size, topTip: Math.max(...[...new Set(tips)].map((x) => tips.filter((y) => y === x).length)), noLead: defs.filter((x) => !x).length, same, tipFlag: Boolean(tip?.tip) };
+  });
+  t.ok(v65.tipKinds >= 3 && v65.topTip <= 6, "the tip's lead-in varies across videos (no phrasing on more than half of 12)", JSON.stringify(v65));
+  t.ok(v65.noLead >= 3 && v65.noLead <= 9, "the definition goes without a lead-in in some videos instead of \"Simply put\" every time", JSON.stringify(v65));
+  t.ok(v65.same && v65.tipFlag, "a subject always reads the same way, and the tip keeps its WHAT TO DO marker whatever its wording", JSON.stringify(v65));
   await page.context().close();
 }

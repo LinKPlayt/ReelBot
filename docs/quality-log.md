@@ -10,6 +10,55 @@ before and after on the same inputs, and add tests so it can't come back.
 
 ---
 
+## v65 · Scripts · The same scaffolding doesn't open every video
+
+**How it was found.** The spoken lead-ins of 33 "Your topic" scripts, as viewers hear them after `dramatize()`.
+
+**Weakest area found.** The story's scaffolding was the same in nearly every video:
+- "So here's what to do:" opened the tip in 31 of 33;
+- "Simply put," opened the definition in 19;
+- "Tell me in the comments." ended 15;
+- "Bottom line:" came in 13, usually right before "So here's what to do:".
+
+A follower hears the template, which is the "generic AI phrases or filler" the brief asks to remove.
+
+**What changed** (`app/hook.js`; `app/make.js` and `app/wording.js` recognise the new wordings):
+- `LEADINS`: several natural phrasings per role.
+  - Tip: "So here's what to do:", "Here's the move:", "Your next step:", "What to do about it:".
+  - Definition: "Simply put,", "Put plainly,", or none (half the time).
+  - Position: "Bottom line:", "The big picture:", "What it comes down to:".
+  - Comment ask: "Tell me in the comments.", "Drop it in the comments.", "Let me know below.".
+- `leadinsFor(subject)` picks one per role from a hash of the subject (FNV-1a), the roles stepping at different
+  rates. The same subject always reads the same way; different subjects differ.
+- The tip line is always flagged `tip`, so its "WHAT TO DO" chip appears whatever its wording. The "WHAT TO DO"
+  pattern, the duplicate-label clean-up and the "already has a bottom line" check know the new wordings.
+
+**Measured**, the same 33 subjects:
+
+| Role | Most common phrasing before | After |
+|---|---|---|
+| Tip | "So here's what to do:", 31 of 33 videos | at most 10 (four in use) |
+| Definition | "Simply put,", 19 | 8 (and half the videos have no lead-in) |
+| Position | "Bottom line:", 13 | at most 6 |
+| Comment ask | "Tell me in the comments.", 15 | at most 8 |
+
+A render of the Index fund reel confirmed the screen: "The big picture: …" is shown as the big-words card, as
+"Bottom line" was, and "Your next step: …" carries the WHAT TO DO chip.
+
+**Found and logged, not fixed.** Photos from this machine were unreliable today. Openverse answered with server
+errors (500, 504) or took 24 s for one search, which is double the app's 12 s limit, so such a search comes back
+empty in the app too. Wikimedia Commons refused several searches in a row. Photo-supply work needs a steadier
+day to be measured (queue item 6).
+
+**Tests.** `tests/web/logic.mjs`, "the same scaffolding doesn't open every video (v65)":
+- the tip's lead-in varies across 12 subjects;
+- the definition sometimes has none;
+- a subject is consistent, and the tip keeps its WHAT TO DO marker.
+
+The earlier bottom-line test accepts every wording.
+
+---
+
 ## v64 · Visuals · Drawings that fit the line, and photo judging that survives a batch
 
 **How it was found.** Eight reels were planned back to back with the app's own `planReel` (real photo searches,
@@ -943,7 +992,8 @@ Found on the live feed right after release and added: a trailing fragment that p
    general opening writer that adds nothing untrue (from the definition's own words, say) is the next step.
 6. **Free photo supply.** 3 of 39 planned scenes are photos: Openverse and Wikimedia searches return generic
    shots the meaning judge rightly turns down. Searches built from what a line shows (not its keywords), or
-   another free source, would give the video more real footage.
+   another free source, would give the video more real footage. Openverse can take longer than the app's 12 s
+   search limit (24 s measured in v65), so a longer limit for it, or a retry, is worth testing on a steady day.
 7. **Literal pictures (mostly done, v64).** "Long-term habits build wealth" draws a hammer ("build"); a verb used figuratively still
    picks its literal object.
 8. **"Your topic" leftovers (v59).**

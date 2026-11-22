@@ -709,7 +709,7 @@ export async function produceReel(plan, opts, ui) {
     // What the moment is, for its sound and its on-screen label.
     const said = line.text || "";
     sc.chip = line.question ? "YOUR TURN" : line.stance ? "BOTTOM LINE" : /^(But )?here's the catch/i.test(said) ? "THE CATCH"
-      : /^Here's that number|^By the numbers/i.test(said) ? "KEY NUMBER" : line.tip || /^So here's what to do/i.test(said) ? "WHAT TO DO" : /^Here's why it matters/i.test(said) ? "WHY IT MATTERS" : "";
+      : /^Here's that number|^By the numbers/i.test(said) ? "KEY NUMBER" : line.tip || /^(?:So here's what to do|Here's the move|Your next step|What to do about it):/i.test(said) ? "WHAT TO DO" : /^Here's why it matters/i.test(said) ? "WHY IT MATTERS" : "";
     sc.tone = line.question ? "question" : line.stance ? "stance" : sc.chip === "THE CATCH" || line.role === "risk" ? "down" : sc.chip === "WHAT TO DO" ? "tip" : "";
     if (line.kind === "outro") sc.kind = "outro";
     else if (line.board?.length >= 2 && !line.vmode) { sc.kind = "board"; sc.markets = line.board; }   // a market recap opens on the day's board (unless you picked a picture)

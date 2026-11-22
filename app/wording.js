@@ -75,8 +75,8 @@ export function checkWording(input) {
   fix(/\b([A-Za-z']+)(\s+)\1\b/gi, (m, w, sp) => (OK_TWICE.has(w.toLowerCase()) ? m : w), "removed a doubled word");
 
   // A label that's been added twice ("So here's what to do: The takeaway: …").
-  fix(/^((?:So )?Here's (?:the catch|that number|why it matters|what to do)|But here's the catch|Bottom line|The takeaway|Why it matters|The catch|By the numbers):\s+(?:(?:The takeaway|Why it matters|The catch|By the numbers|Bottom line):\s+)+/i, "$1: ", "removed a doubled lead-in");
-  fix(/^((?:So )?Here's [^:]{3,30}|But here's the catch|Bottom line):\s+(?:however|but|also|and),?\s+/i, "$1: ", "removed a clashing linking word");
+  fix(/^((?:So )?Here's (?:the catch|that number|why it matters|what to do|the move)|But here's the catch|Bottom line|The big picture|What it comes down to|Your next step|What to do about it|The takeaway|Why it matters|The catch|By the numbers):\s+(?:(?:The takeaway|Why it matters|The catch|By the numbers|Bottom line):\s+)+/i, "$1: ", "removed a doubled lead-in");
+  fix(/^((?:So )?Here's [^:]{3,30}|But here's the catch|Bottom line|The big picture|What it comes down to|Your next step|What to do about it):\s+(?:however|but|also|and),?\s+/i, "$1: ", "removed a clashing linking word");
 
   // "a" or "an" to match the next word's sound.
   fix(/\b([Aa]n?)(\s+)([^\s]+)/g, (m, art, sp, next, at, all) => {
