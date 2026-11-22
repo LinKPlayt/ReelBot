@@ -446,8 +446,15 @@ const THEMES = [
       : /hike|tighten|hawkish|raise|higher/i.test(t) ? "Higher rates make loans and credit cards pricier, but savers can earn more."
       : "Rate decisions ripple into your mortgage, your credit card and your savings account.")],
   ["inflation", /\b(inflation|cpi|consumer prices|cost of living|price (rises|increases|pressures))\b/i, () => "When prices rise faster than your pay, your savings lose buying power."],
-  ["housing", /\b(mortgage|housing|home (prices|sales|buyers)|rents?|landlords?|real estate)\b/i, () => "Small changes in mortgage rates can swing a monthly payment by hundreds."],
+  // What the housing stories are about: rates, rents, or a market where buyers have the upper hand.
+  ["housing", /\b(mortgage|housing|home (prices|sales|buyers)|rents?|landlords?|real estate)\b/i,
+    (t) => (/\bmortgage|\brates?\b/i.test(t) ? "Small changes in mortgage rates can swing a monthly payment by hundreds."
+      : /\b(rents?|renters?|landlords?)\b/i.test(t) && !/\bbuyers?\b/i.test(t) ? "Rent is most people's biggest bill, so a rise there squeezes every other part of the budget."
+      : /\b(record lows?|slump\w*|slow\w*|buyers are|buyer's market|price cuts?|cut prices|inventory|calling the shots)\b/i.test(t) ? "When sales slow, buyers get more room to negotiate on price and repairs."
+      : "Small changes in mortgage rates can swing a monthly payment by hundreds.")],
   ["jobs", /\b(layoffs?|jobs|jobless|unemploy\w*|hiring|payrolls|wages)\b/i, () => "A shaky job market is the best reason to keep an emergency fund."],
+  ["gig work", /\b(gig|freelanc\w*|contractors?|side hustles?|self-employ\w*)\b/i,
+    () => "Employee or contractor? That label decides your benefits, and whether you pay your own taxes."],
   ["trade", /\b(tariffs?|trade war|trade deal|exports?|imports?)\b/i, () => "Tariffs can push up prices on everyday goods."],
   ["crypto", /\b(bitcoin|crypto\w*|ethereum|stablecoins?|blockchain|token)\b/i, () => "Crypto can swing hard both ways, so only risk what you can afford to lose."],
   ["gold and oil", /\b(gold|oil|crude|commodit\w+)\b/i, () => "Commodity prices feed into what you pay for fuel and everyday goods."],

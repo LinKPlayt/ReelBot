@@ -10,6 +10,56 @@ before and after on the same inputs, and add tests so it can't come back.
 
 ---
 
+## v67 · Visuals + scripts · Drawings that change from scene to scene, closings that fit the news
+
+### Visuals: the side pictures don't repeat (`app/illustrator.js` `pickMotifs`; `app/make.js`, `app/main.js`)
+
+**How it was found.** The Index fund contact sheet (v65 render): a rising chart was in 9 of the 12 illustrated
+scenes, mostly as one of the two small pictures beside the main one. Only the main subject was kept from
+repeating; the side pictures came from the line's concepts and the topic's, which are the same all video.
+
+**Measured** over the 35 built-in explainers (hook + points, 175 scenes, the app's own picker in order;
+`scratchpad/motif/m.mjs`):
+
+| | Before | After |
+|---|---|---|
+| Back-to-back scenes sharing a picture | 69.3% of pairs | 15.7% |
+| Scenes showing the video's most common picture | 74.9% | 53.7% |
+| Different pictures per scene | 1.66 | 2.07 |
+
+**Changed.** When a side picture was in the last scene, it's swapped for another that fits the line: something
+else the line mentions, or an idea related to the main subject (`RELATED`), preferring ones not shown at all
+yet. The main subject is chosen exactly as before (tested), and a picture you chose with "Another illustration"
+is kept as it is. The second shot of a long line and the review screen's thumbnails use the same rule, so the
+preview matches the video. The second shot also avoids the next scene's main subject: it's chosen after that scene,
+and in the Index fund render it had repeated the next line's bar chart (now a big arrow). E.g. Build an Emergency Fund: "receipt+umbrella+chartUp | umbrella+**chartUp**+cash"
+→ "… | umbrella+cash+briefcase"; Pay Yourself First: "piggy+**wallet**+coins" after "crown+piggy+wallet" →
+"piggy+coins+nestEgg".
+
+### Scripts: news closings that fit the stories (`app/story.js` `THEMES`)
+
+**Weakest.** Every housing round-up closed on "Small changes in mortgage rates can swing a monthly payment by
+hundreds", also when its stories were record-low home sales or rents. Gig-work stories (the side-hustles niche's
+usual news) matched no theme and closed on "stay informed, but don't make big money moves on one headline".
+
+**Changed.**
+- Housing says what its stories are about: rates (as before), rents ("Rent is most people's biggest bill…"), or a
+  slow market ("When sales slow, buyers get more room to negotiate on price and repairs").
+- A "gig work" theme: "Employee or contractor? That label decides your benefits, and whether you pay your own
+  taxes."
+
+**Measured** on the 18 saved snapshot news scripts:
+- 6 closings changed: the 3 real-estate ones now match their "record low home sales" story, and the 3 side-hustle
+  ones are "The thread today: gig work", matching 2 of their 3 stories.
+- The other 12 are the same as before.
+
+**Tests.** `tests/web/logic.mjs`, "the drawings change from scene to scene (v67)":
+- side-picture sharing across the 35 explainers stays under 30%;
+- the main subject is unchanged and a picked drawing is kept;
+- each housing case and the gig-work theme.
+
+---
+
 ## v66 · Visuals + narration + scripts · Captions in phrases, tickers spelled, definitions cut cleanly
 
 **How it was found.** A contact sheet of the Index fund render (one frame every 2 s); the news headlines in the

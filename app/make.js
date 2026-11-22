@@ -699,7 +699,7 @@ export async function produceReel(plan, opts, ui) {
   // Each cut sits in the pause before its line: halfway, and at most 0.26 s before the voice (the picture
   // leads the word). A held moment (a quiz countdown, a chapter card) stays with the scene it belongs to.
   const cutBefore = (i) => (i === 0 ? 0 : spans[i][0] - Math.min(0.26, Math.max(0.02, (spans[i][0] - spans[i - 1][1] - (script.lines[i - 1].hold || 0)) / 2)));
-  const scenes = [], credits = [], shown = [];      // shown: main subjects of recent illustrations
+  const scenes = [], credits = [], shown = [];      // shown: the motifs of recent illustrations
   for (let i = 0; i < script.lines.length; i++) {
     const line = script.lines[i];
     const sc = { start: cutBefore(i), end: i === script.lines.length - 1 ? total : cutBefore(i + 1), kind: "fallback",
@@ -730,10 +730,10 @@ export async function produceReel(plan, opts, ui) {
       else if (opts.artStyle !== "icons") {
         // Drawn for this line (or reused if this idea was drawn before), in the reel's art style.
         try {
-          const motifs = pickMotifs(line, script.topicTitle || script.title, shown.slice(-2));
-          shown.push(motifs[0]);
+          const motifs = pickMotifs(line, script.topicTitle || script.title, shown.slice(-2).map((m) => m[0]), shown.slice(-2));
+          shown.push(motifs);
           const art = await artFor({ motifs, style: styleFor(opts.artStyle, script.niche), accent: accentOf(opts.accent) }, script.topicTitle || script.title);
-          sc.kind = "image"; sc.bitmap = art.bitmap; sc.art = true; sc.relevant = true; sc.hero = motifs[0];
+          sc.kind = "image"; sc.bitmap = art.bitmap; sc.art = true; sc.relevant = true; sc.hero = motifs[0]; sc.motifs = motifs;
         } catch (e) { console.warn("illustration", e); sc.kind = "illus"; sc.icon = v.icon; sc.label = v.label; }
       }
       else { sc.kind = "illus"; sc.icon = v.icon; sc.label = v.label; }
@@ -764,10 +764,12 @@ export async function produceReel(plan, opts, ui) {
       if (!at) continue;
       try {
         // The second shot shows the idea a different way from the first, and from what was just on screen.
-        const recent = [...(sc.art ? [sc.hero] : []), ...out.slice(-3).map((x) => x.hero)].filter(Boolean);
-        const motifs = pickMotifs({ text: line.text }, topic, recent);
+        // (…and from the scene that comes next, which was chosen before this shot existed.)
+        const next = scenes[k + 1];
+        const recent = [...(sc.art ? [sc.hero] : []), ...out.slice(-3).map((x) => x.hero), next?.hero].filter(Boolean);
+        const motifs = pickMotifs({ text: line.text }, topic, recent, [...out.slice(-3, -1), next, sc].map((x) => x?.motifs).filter(Boolean));
         const art = await artFor({ motifs, style, accent }, topic);
-        const cut = { ...sc, hero: motifs[0], start: at.start - 0.04, bitmap: art.bitmap, art: true, payoff: false, chip: "", tone: "", stat: null, seed: (sc.seed || 0) + 100, trans: "whip" };
+        const cut = { ...sc, hero: motifs[0], motifs, start: at.start - 0.04, bitmap: art.bitmap, art: true, payoff: false, chip: "", tone: "", stat: null, seed: (sc.seed || 0) + 100, trans: "whip" };
         sc.end = cut.start; out.push(cut);
       } catch (e) { console.warn("cut", e); }
     }

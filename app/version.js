@@ -1,9 +1,13 @@
 // The app's version and its update notes, shown once in a "What's new" window after each update.
 // When you deploy: bump APP_VERSION, add an entry at the top of UPDATES, and set the same number in
 // sw.js (VERSION = "reelbot-v<APP_VERSION>"). A test checks the two match.
-export const APP_VERSION = 66;
+export const APP_VERSION = 67;
 
 export const UPDATES = [
+  { version: 67, title: "More variety on screen, closings that fit the news", items: [
+    "The drawings change from scene to scene: the small pictures beside the main one no longer repeat the last scene's (the same rising chart in every corner), so a video looks less like one picture.",
+    "A news video's closing thought fits its stories: a buyers' market, rising rents and gig-work rules each get their own instead of the same line about mortgage rates.",
+  ] },
   { version: 66, title: "Captions that read like phrases", items: [
     "Captions break where you'd pause: a caption no longer ends on \u201cthe\u201d, \u201cto\u201d or \u201can\u201d with the rest of the phrase on the next screen, and a number stays with its unit (\u201c9 percent\u201d).",
     "Ticker symbols that look like words are spelled out in news: IREN isn't read as \u201ciron\u201d, LITE isn't \u201clight\u201d.",

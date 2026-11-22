@@ -999,8 +999,8 @@ function drawGenerated(cv, v, line, recent = []) {
   const n = parseInt(state.accent.slice(1), 16), accent = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
   if (v.type === "illus" && line && state.art !== "icons") {
     const script = state.plan?.script || {};
-    const motifs = pickMotifs(line, script.topicTitle || script.title || "", recent.slice(-2));
-    recent.push(motifs[0]);
+    const motifs = pickMotifs(line, script.topicTitle || script.title || "", recent.slice(-2).map((m) => m[0]), recent.slice(-2));   // as the video will draw it
+    recent.push(motifs);
     drawArt(thumbStage.getContext("2d"), { motifs, style: styleFor(state.art, script.niche), accent });
     cv.getContext("2d").drawImage(thumbStage, 0, 0, cv.width, cv.height);
     return;

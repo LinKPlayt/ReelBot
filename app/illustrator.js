@@ -196,10 +196,20 @@ export function artOptions(text, topic = "") {
 export const motifsFor = (line, topic = "") => { const opts = artOptions(line.text, topic); return opts[(line.artPick || 0) % opts.length]; };
 // Like motifsFor, but avoids a main subject that was just shown (so two scenes in a row don't look the
 // same). A choice you made with "Another illustration" is always kept.
-export function pickMotifs(line, topic = "", recent = []) {
+// shown: the motifs of the scenes just before ([[hero, side, side], …]). The two smaller pictures beside the main
+// one change too: the same rising chart in the corner of every scene made a reel look like one picture. Each side
+// picture already on screen in the last scene is swapped for another that fits the line (what else it mentions,
+// or an idea related to its main subject), when there is one.
+export function pickMotifs(line, topic = "", recent = [], shown = []) {
   const opts = artOptions(line.text, topic);
   if (line.artPick != null) return opts[line.artPick % opts.length];
-  return opts.find((o) => !recent.includes(o[0])) || opts[0];
+  const o = opts.find((x) => !recent.includes(x[0])) || opts[0];
+  const last = new Set(shown.at(-1) || []), before = new Set(shown.flat());
+  if (!last.size || !o.slice(1).some((m) => last.has(m))) return o;
+  const pool = [...o.slice(1), ...opts.map((x) => x[0]), ...(RELATED[o[0]] || []), ...o.slice(1).flatMap((m) => RELATED[m] || [])]
+    .filter((m, i, a) => m !== o[0] && MOTIFS[m] && a.indexOf(m) === i);
+  const fresh = pool.filter((m) => !last.has(m)), side = [...fresh.filter((m) => !before.has(m)), ...fresh.filter((m) => before.has(m))].slice(0, 2);
+  return side.length ? [o[0], ...side] : o;
 }
 
 const WEAK = /^(chairman|ceo|chief executive|executives?|now|see|look\w*|watch\w*|notice\w*|track\w*|monitor\w*|find|found|good|great|best|yes|hard|early|years?|decades?|where|states?|regions?|free|power|rates?|said|says|reports?|reported|data|numbers|process\w*|systems?|think\w*|smart|cares?|caring|love\w*|steps?|progress|reach\w*|finish\w*|achiev\w*|pieces?|missing|aim|plans?|planning|deal|check\w*|compar\w*|stud\w*|cuts?|cutting|reduc\w*|stack|higher|fall|falls|bets?|hot|stable|access|keys?|win|wins|won|start small|seed|grow|growing|share of|split|portion|slice|people|public|engine|machines?|digital|online|content|brand\w*|promot\w*|choice|choose|balance\w*|interest|money|pay|pays|paid|earn\w*|guide|direction|strategy|map|where|location\w*|search\w*|find|research\w*|analy\w*|learn\w*|books?|study|sale|deals?|attract\w*|pull\w*|rest|passive|urgent|challeng\w*|health\w*|mind\w*|habit\w*|brain|form|forms|rule|rules|recommend\w*|approve\w*)$/;

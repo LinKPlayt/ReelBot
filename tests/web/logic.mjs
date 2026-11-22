@@ -751,5 +751,32 @@ export default async function ({ t, newPage }) {
   t.ok(v66.trim[0] === "Day trading is a form of speculation in securities." && v66.trim[1] === "A hedge fund is a pooled investment fund that holds liquid assets.",
     "a long definition is cut at a clause, never mid-phrase (\"…in securities in.\")", JSON.stringify(v66.trim));
   t.ok(v66.def.join() === "false,true,true", "\"Hedge fund replication is…\" isn't taken as the definition of a hedge fund", JSON.stringify(v66.def));
+  t.section("Logic: the drawings change from scene to scene (v67)");
+  const v67 = await page.evaluate(async () => {
+    const IL = await import("./app/illustrator.js"), topics = (await (await fetch("./app/data/topics.json")).json()).topics;
+    let pairs = 0, shared = 0, meaning = true;
+    for (const tp of topics) {
+      const shown = [];
+      for (const text of [tp.hook, ...tp.points].filter(Boolean)) {
+        const m = IL.pickMotifs({ text }, tp.title, shown.slice(-2).map((x) => x[0]), shown.slice(-2));
+        if (m[0] !== IL.pickMotifs({ text }, tp.title, shown.slice(-2).map((x) => x[0]))[0]) meaning = false;   // the main picture is the same choice as before
+        if (shown.length) { pairs++; if (m.some((x) => shown.at(-1).includes(x))) shared++; }
+        shown.push(m);
+      }
+    }
+    const kept = IL.pickMotifs({ text: "Index funds track the market.", artPick: 1 }, "Index fund", [], [["chartUp", "bars", "pie"]]);
+    return { share: shared / pairs, meaning, kept: kept.join() === IL.artOptions("Index funds track the market.", "Index fund")[1 % IL.artOptions("Index funds track the market.", "Index fund").length].join() };
+  });
+  t.ok(v67.share < 0.3, "back-to-back scenes rarely share a drawing (it was 69% of scene pairs)", JSON.stringify(v67));
+  const v67b = await page.evaluate(async () => {
+    const ST = await import("./app/story.js");
+    return [ST.headlineThread(["'Buyers are out for blood': With home sales at a record low, buyers are calling the shots.", "AI wealth is already changing San Francisco's housing market."], "housing").text,
+      ST.headlineThread(["Rents climb again in big cities as landlords raise prices.", "Renters face the highest share of income on housing in decades."], "housing").text,
+      ST.headlineThread(["Mortgage rates fall to a two-month low.", "Home prices hold steady."], "housing").text,
+      ST.headlineThread(["New DOL rule allows more gig workers to be contractors.", "From gig workers to tycoons, China reaches into every pocket."]).text];
+  });
+  t.ok(/buyers get more room/.test(v67b[0]) && /rent is most people's biggest bill/i.test(v67b[1]) && /mortgage rates/.test(v67b[2]) && /^The thread today: gig work\. Employee or contractor\?/.test(v67b[3]),
+    "a news video's closing thought fits its stories: a buyers' market, rents, rates, gig work", JSON.stringify(v67b));
+  t.ok(v67.meaning && v67.kept, "the main drawing is chosen as before, and a drawing you picked is kept as it is", JSON.stringify(v67));
   await page.context().close();
 }
