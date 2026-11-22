@@ -36,16 +36,23 @@ export const semanticReady = () => Boolean(embedder && vectors);
 // The model alone, without the library: for judging whether a photo shows what a line is about. Loaded on
 // demand (it ships with the app, so no download after the first), and released again afterwards unless
 // semantic search is using it: the voice and the video need the memory.
+// Each successful load is one hold, and each release gives one back: the model is freed only when nobody holds it.
+// (Before v64 a release freed it outright. Planning reels back to back, as "Make all" does, the first reel's
+// release came while the next was choosing its photos, which then lost their meaning scores and fell back to
+// matching words: city skylines for the Federal Reserve. Measured: every second reel in a batch.)
+let holders = 0;
 export async function loadEmbedder(timeoutMs = 20000) {
-  if (embedder) return true;
+  if (embedder) { holders++; return true; }
   loadingModel ??= model().then((e) => (embedder ??= e));
   try {
     await Promise.race([loadingModel, new Promise((_, no) => setTimeout(() => no(new Error("timed out")), timeoutMs))]);
+    if (embedder) holders++;
     return Boolean(embedder);
   } catch (e) { console.warn("meaning model unavailable", e); loadingModel = null; return false; }
 }
 export async function releaseEmbedder() {
-  if (!embedder || vectors || loading) return;             // semantic search is using it
+  holders = Math.max(0, holders - 1);
+  if (holders || !embedder || vectors || loading) return;  // someone still holds it, or semantic search is using it
   const e = embedder; embedder = null; loadingModel = null;
   try { await e.dispose?.(); } catch { /* already gone */ }
 }

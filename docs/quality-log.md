@@ -10,6 +10,62 @@ before and after on the same inputs, and add tests so it can't come back.
 
 ---
 
+## v64 · Visuals · Drawings that fit the line, and photo judging that survives a batch
+
+**How it was found.** Eight reels were planned back to back with the app's own `planReel` (real photo searches,
+the meaning judge), recording every scene's search, photo, meaning score and final visual.
+
+**Weakest areas found.**
+- **Drawings are the visuals.** Only 3 of 39 scenes ended up as photos: the free photo searches mostly return
+  generic shots ("car repair garage" for an emergency fund, beans for inflation), and the meaning judge rightly
+  turns them down. So whether each drawing fits its line decides how relevant the video looks. An audit of the
+  main drawing for all 692 lines of the app's scripts (explainers, quiz, topic scripts, news) found 26 drawn from
+  a misread word:
+  - "Social Security" → a padlock ("security"), 17 lines;
+  - "build wealth" → a hammer, 5;
+  - "career" → a heart (matched "care…");
+  - "goods" → a thumbs-up (matched "good");
+  - "triple" → an aeroplane (matched "trip…");
+  - "fixed-income" → a briefcase (matched "income").
+
+  Some subjects had no picture at all and fell back to coins: GDP, annuities, venture capital, day trading,
+  "divide 72 by…", a person's job.
+- **Photo judging lost in a batch.** Each plan frees the meaning model in the background once its photos are
+  chosen. Planned back to back (as "Make all" does), that release came while the next plan was still choosing,
+  so that plan's photos lost their meaning scores and fell back to matching words (city skylines for the Federal
+  Reserve). In the batch: 36 of 47 photos scored, one reel with none.
+
+**What changed.**
+- `app/illustrator.js`, the terms behind the drawings:
+  - "Social Security" → the retirement picture, and "security" after "social" is no longer the padlock;
+  - "build" isn't the hammer; "care…" → only "caring"; "good" not "goods"; "trip(s)" not "triple"; "income"
+    not "fixed-income";
+  - new: GDP → the economy (factory); annuities → hand with coin; venture capital → the idea bulb; day trading
+    → the market chart; bonds → the bond document; "divide / rule of 72" → the calculator; "shrinking /
+    contraction" → the falling chart;
+  - a job title (chairman, CEO) counts only when nothing else in the line does.
+- `app/ai/semantic.js`: the meaning model counts its holders. Each load is one hold, each release gives one back,
+  and the model is freed only when nobody holds it.
+
+**Measured.**
+
+| | Before | After |
+|---|---|---|
+| Main drawings from a misread word (692 lines, used for tuning) | 26 | 0 |
+| Main drawings changed on the tuning lines (all judged) | | 57: better, after 3 regressions in the first version were fixed ("traders" took crypto lines, "CEO" beat "Bitcoin", "shrinking GDP" lost its falling chart) |
+| Held out: 221 lines (live headlines, 22 held-out topic scripts, 22 fresh topic scripts), drawings changed | | 9: 8 better, 1 neutral, 0 worse |
+| Photos with a meaning score, 8 reels planned back to back | 36 of 47 | 47 of 47 |
+
+**Tried and dropped.**
+- **Caption timing from the line's own phonemes**, split by word. On 166 lines where the split lines up: mean
+  error 39.6 → 37.1 ms, same correlation. Not worth the alignment code the other 17% would need.
+- **Wikipedia's lead image** as a photo source for your own topics. Hit and miss: the Federal Reserve's is a
+  249 px seal, Bitcoin's a 64 px logo, Mortgage's a calculator screenshot, and many topics have none.
+
+**Tests.** `tests/web/logic.mjs`, "drawings that fit the line, and photo judging that survives a batch (v64)".
+
+---
+
 ## v63 · Scripts · Openings that say something
 
 **How it was found.** The opening line of every "Your topic" script for 34 common finance subjects, as viewers hear
@@ -885,21 +941,24 @@ Found on the live feed right after release and added: a trailing fragment that p
    splitting the line's own phonemes by word would be closer.
 5. **Openings for the long tail (v63).** Most of the 20,038 library subjects still open on a (varied) template. A
    general opening writer that adds nothing untrue (from the definition's own words, say) is the next step.
-6. **Literal pictures.** "Long-term habits build wealth" draws a hammer ("build"); a verb used figuratively still
+6. **Free photo supply.** 3 of 39 planned scenes are photos: Openverse and Wikimedia searches return generic
+   shots the meaning judge rightly turns down. Searches built from what a line shows (not its keywords), or
+   another free source, would give the video more real footage.
+7. **Literal pictures (mostly done, v64).** "Long-term habits build wealth" draws a hammer ("build"); a verb used figuratively still
    picks its literal object.
-7. **"Your topic" leftovers (v59).**
+8. **"Your topic" leftovers (v59).**
    - Hedge fund opens on the wrong subject ("Hedge fund replication is…").
    - Day trading's definition is cut short ("…speculation in securities in.").
    - Worked examples are read out of context (Dollar cost averaging).
    - Local rules without a country name (Sweden's ISK) aren't caught.
    - Encyclopedia register remains ("is composed of several layers").
-8. **"Your topic" jargon.** Formal words are now plain (v55), but technical terms remain ("distribution",
+9. **"Your topic" jargon.** Formal words are now plain (v55), but technical terms remain ("distribution",
    "securitization"); explaining a term needs a source sentence that does.
-9. **Photo supply.** Where no photo fits by meaning (Inflation, Roth IRA, a mortgage explainer), every scene is an
+10. **Photo supply.** Where no photo fits by meaning (Inflation, Roth IRA, a mortgage explainer), every scene is an
    illustration; other searches (the topic's Wikipedia image, related subjects) could find real photos that fit.
-10. **A measuring tool in the repo.** The Whisper/DNSMOS (v57) and forced-alignment (v58) checks live outside the
+11. **A measuring tool in the repo.** The Whisper/DNSMOS (v57) and forced-alignment (v58) checks live outside the
    repository; adding them under `scripts/` would let every narration change be measured the same way.
-11. **A review-editor timer.** `app/main.js` rechecks an edited line in a timeout that reads `state.plan.fact`
+12. **A review-editor timer.** `app/main.js` rechecks an edited line in a timeout that reads `state.plan.fact`
    after the plan can be cleared (an occasional uncaught error in the fuzz test). UI code, outside these three areas.
 
 (Done: the same story told three times and ticker lists read aloud, v61. AAPL-like tickers, queue item 5 before v57: spelled letters now come from a table, so "A.A.P.L." keeps both

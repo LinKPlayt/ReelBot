@@ -697,5 +697,24 @@ export default async function ({ t, newPage }) {
   t.ok(!v63.ss.some((h) => /Social Security number/.test(h)), "never \"a Social Security number\" (it's a figure)", JSON.stringify(v63.ss));
   t.ok(new Set(v63.plain.map((h) => h.split(" ").slice(-3).join(" "))).size >= 3 && !v63.plain.some((h) => /heard of [a-z]+ [a-z]+\. |understood [a-z]/.test(h) && /\b(a|an) term\b/.test(h)),
     "subjects with nothing specific get one of several openings, not all the same sentence", JSON.stringify(v63.plain));
+
+  t.section("Logic: drawings that fit the line, and photo judging that survives a batch (v64)");
+  const v64 = await page.evaluate(async () => {
+    const IL = await import("./app/illustrator.js"), S = await import("./app/ai/semantic.js");
+    const hero = (t, topic = "") => IL.artOptions(t, topic)[0][0];
+    const art = [hero("Social Security is a check most Americans count on in retirement."), hero("Build an emergency fund of a few months' expenses before you need it."),
+      hero("Rohit Kapoor discusses career growth and startup tactics."), hero("It's paid when the goods come into the country."), hero("New legislation would triple the goal."),
+      hero("Most equity and fixed-income ETFs are index funds."), hero("Divide 72 by the yearly return: 72 divided by 8 is 9."), hero("A bond is a type of security under which the issuer owes the holder a debt."),
+      hero("Loosdog CEO Tom Sosnoff: Bitcoin, ETH and Solana have held up pretty well."), hero("Two straight quarters of shrinking GDP."), hero("Hackers stole passwords in a security breach.")];
+    // Two holders of the meaning model (two reels planned back to back): the first one's release mustn't free it.
+    const a = await S.loadEmbedder(60000), b = await S.loadEmbedder(60000);
+    await S.releaseEmbedder();
+    const stillThere = Boolean((await S.embedTexts(["a photo of a bank"]))?.[0]);
+    await S.releaseEmbedder();
+    return { art, held: a && b && stillThere };
+  });
+  t.ok(v64.art.join() === "beach,umbrella,briefcase,globe,target,chartUp,calculator,document,bitcoin,chartDown,lock",
+    "the drawing fits what the line means: Social Security isn't a padlock, \"build\" isn't a hammer, \"career\" isn't a heart, \"goods\" isn't a thumbs-up, \"triple\" isn't a plane", v64.art.join());
+  t.ok(v64.held, "the meaning model stays loaded while a second reel still needs it (photo judging no longer lost in a batch)");
   await page.context().close();
 }

@@ -1,9 +1,13 @@
 // The app's version and its update notes, shown once in a "What's new" window after each update.
 // When you deploy: bump APP_VERSION, add an entry at the top of UPDATES, and set the same number in
 // sw.js (VERSION = "reelbot-v<APP_VERSION>"). A test checks the two match.
-export const APP_VERSION = 63;
+export const APP_VERSION = 64;
 
 export const UPDATES = [
+  { version: 64, title: "Pictures that fit, even in a batch", items: [
+    "The drawings fit what's being said: Social Security shows retirement instead of a padlock, \u201cbuild your savings\u201d isn't a hammer, \u201ccareer\u201d isn't a heart, bonds show a bond, GDP shows the economy.",
+    "When you make several videos in a row (Make all), every video's photos are judged by what they show; before, every other video lost that check and fell back to matching words.",
+  ] },
   { version: 63, title: "Openings that say something", items: [
     "Your own topics open on something specific: why the subject matters to you (\u201cA stock split can double your shares without making you a cent richer.\u201d), its real catch, or a striking number said first (\u201c$9.9T. That's a 401(k) figure most people never hear.\u201d), instead of the same few template lines.",
     "Subjects with nothing specific to open on get one of several openings, so your videos don't all start with the same sentence.",

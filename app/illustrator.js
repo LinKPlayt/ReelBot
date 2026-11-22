@@ -97,7 +97,7 @@ const TERMS = [
   ["credit cards?", "card"], ["debit card|card", "card"], ["credit score|credit report|fico|credit history", "document"], ["lenders?|borrow\\w*|loan|loans", "handCoin"],
   ["checks?|cheques?", "check"], ["atms?|cash machine", "atm"],
   // protection and risk
-  ["insurance|insured|insurer|premium|safety net|emergency fund|rainy day", "umbrella"], ["scam\\w*|fraud\\w*|hack\\w*|security|password|identity theft|phishing", "lock"],
+  ["insurance|insured|insurer|premium|safety net|emergency fund|rainy day", "umbrella"], ["social security", "beach"], ["scam\\w*|fraud\\w*|hack\\w*|(?<!social )security|password|identity theft|phishing", "lock"],
   ["vault|safe deposit|safe haven", "vault"], ["bankrupt\\w*|default\\w*|collapse\\w*|blow up|implod\\w*", "bomb"], ["burn\\w*|fire\\b|on fire|hot\\b", "fire"],
   ["bubble|bubbles|mania|hype|overvalued", "bubble"], ["gambl\\w*|bet|bets|betting|lottery|casino|speculat\\w*", "dice"], ["warning|risk\\w*|danger\\w*|catch|volatil\\w*", "warning"],
   ["lose|loss|losses|lost|fail\\w*|worst|mistake\\w*", "thumbsDown"], ["recover\\w*|heal\\w*|repair\\w*", "bandage"], ["stable|stability|steady|anchor\\w*|peg|pegged", "anchor"],
@@ -105,7 +105,7 @@ const TERMS = [
   // costs and spending
   ["tax\\w*|irs|deduction\\w*|refund", "receipt"], ["fee|fees|bill|bills|expense ratio|receipt|charges?|commission", "receipt"], ["price tag|discount|sale|deal|deals|coupon\\w*", "priceTag"],
   ["shopping|shop|retail\\w*|store|stores|consumer spending", "bag"], ["inflation|prices?|grocer\\w*|cost of living", "cart"], ["gift\\w*|bonus|bonuses|free\\b", "gift"],
-  ["cut|cuts|cutting|trim\\w*|slash\\w*|reduce\\w*", "scissors"], ["gas prices|gasoline|fuel|petrol", "gasPump"], ["calculat\\w*|math|formula|interest rate", "calculator"],
+  ["cut|cuts|cutting|trim\\w*|slash\\w*|reduce\\w*", "scissors"], ["gas prices|gasoline|fuel|petrol", "gasPump"], ["calculat\\w*|math|formula|interest rate|rule of 72|divide|divided|dividing", "calculator"],
   ["percent|percentage|rate|rates|yield|apr|apy", "percent"],
   // saving and wealth
   ["piggy|piggy bank", "piggy"], ["nest egg", "nestEgg"], ["eggs in one basket|diversif\\w*", "basket"], ["savings?|save|saving", "piggy"], ["wallet|spend\\w*|purchase|buy|buying", "wallet"],
@@ -116,7 +116,7 @@ const TERMS = [
   ["city|cities|downtown|building\\w*|office\\w*|skyscraper\\w*", "skyline"], ["keys?|unlock\\w*|access", "key"], ["map|location\\w*|where|region\\w*|state\\b|states\\b", "map"],
   ["direction|strategy|navigat\\w*|guide", "compass"],
   // banks and markets
-  ["bank|banks|banking|deposit\\w*|fdic|federal reserve|central bank|fed\\b", "bank"], ["crash\\w*|recession\\w*|decline\\w*|bear market|fell|fall|drop\\w*|plunge\\w*|slump\\w*", "chartDown"],
+  ["bank|banks|banking|deposit\\w*|fdic|federal reserve|central bank|fed\\b", "bank"], ["crash\\w*|recession\\w*|decline\\w*|bear market|fell|fall|drop\\w*|plunge\\w*|slump\\w*|shrink\\w*|contraction|contracting", "chartDown"],
   ["soar\\w*|surge\\w*|record high|rally|rallies|skyrocket\\w*|boom\\w*|moon", "rocket"], ["rose|rise|rising|gain\\w*|increase\\w*|climb\\w*|higher", "arrowUp"],
   ["dividend\\w*", "tree"], ["compound\\w*|snowball\\w*", "snowball"], ["grow|grows|growth|growing|seed|start small|early", "seedling"], ["interest", "plant"],
   ["share of|split|portion|allocation|breakdown|slice", "pie"], ["stock\\w*|market\\w*|invest\\w*|index fund|funds?|etf|portfolio|shares|s&p|nasdaq|dow", "chartUp"], ["data|chart\\w*|statistic\\w*|numbers", "bars"],
@@ -128,19 +128,19 @@ const TERMS = [
   // people
   ["famil\\w*|kids|children|parents|household\\w*", "family"], ["deal\\b|agreement\\w*|partner\\w*|merger\\w*|acquisition\\w*|negotiat\\w*", "handshake"],
   ["graduat\\w*|degree\\w*|diploma", "graduate"], ["student\\w*|college|tuition|education|university|school|books?|learn\\w*|study", "cap"],
-  ["people|consumers|individuals|families|investors|customers|population|public|citizens", "people"], ["love|loved|favorite|care\\w*|health\\w*", "heart"],
-  ["think\\w*|mind\\w*|psycholog\\w*|habit\\w*|smart|brain", "brain"], ["watch\\w*|see|look\\w*|notice\\w*|track\\w*|monitor\\w*", "eye"], ["good|great|recommend\\w*|approve\\w*|yes", "thumbsUp"],
+  ["people|consumers|individuals|families|investors|customers|population|public|citizens", "people"], ["love|loved|favorite|caring|health\\w*", "heart"],
+  ["think\\w*|mind\\w*|psycholog\\w*|habit\\w*|smart|brain", "brain"], ["watch\\w*|see|look\\w*|notice\\w*|track\\w*|monitor\\w*", "eye"], ["good(?!s)|great|recommend\\w*|approve\\w*|yes", "thumbsUp"],
   // work and industry
-  ["job|jobs|employ\\w*|career\\w*|salary|salaries|paycheck\\w*|workers?|hiring|wages?|income", "briefcase"], ["side hustle\\w*|freelanc\\w*|gig\\w*|self-employed", "laptop"],
-  ["factory|factories|manufactur\\w*|industr\\w*|production", "factory"], ["build\\w*|construct\\w*|auction\\w*|court|judge|ruling", "hammer"], ["oil|crude|opec|barrel\\w*", "oil"],
+  ["job|jobs|employ\\w*|career\\w*|salary|salaries|paycheck\\w*|workers?|hiring|wages?|(?<!fixed[- ])income|chairman|ceo|chief executive|executives?", "briefcase"], ["side hustle\\w*|freelanc\\w*|gig\\w*|self-employed", "laptop"],
+  ["factory|factories|manufactur\\w*|industr\\w*|production", "factory"], ["construct\\w*|auction\\w*|court|judge|ruling", "hammer"], ["oil|crude|opec|barrel\\w*", "oil"],
   ["solar|renewable\\w*|clean energy|green energy", "solar"], ["wind power|wind farm|turbine\\w*", "windmill"], ["energy|power|electric\\w*|battery|batteries|ev\\b|evs\\b", "battery"],
   ["gold|silver|precious metals?|bullion", "goldbars"], ["cars?|vehicles?|auto loan|automaker\\w*|tesla", "car"], ["truck\\w*|deliver\\w*|supply chain|logistics|shipping", "truck"],
-  ["ships?|ports?|containers?|cargo", "ship"], ["travel\\w*|flight\\w*|airline\\w*|vacation\\w*|trip\\w*", "plane"], ["robot\\w*|automation|ai\\b|artificial intelligence|machine learning", "robot"],
+  ["ships?|ports?|containers?|cargo", "ship"], ["travel\\w*|flight\\w*|airline\\w*|vacation\\w*|trips?", "plane"], ["robot\\w*|automation|ai\\b|artificial intelligence|machine learning", "robot"],
   ["chip\\w*|semiconductor\\w*|nvidia|processor\\w*", "chip"], ["data center\\w*|cloud|server\\w*", "server"], ["phone|phones|app|apps|mobile|smartphone\\w*", "phone"],
   ["online|internet|website\\w*|e-?commerce|laptop|computer\\w*|software|tech\\w*|digital", "laptop"], ["system\\w*|process\\w*|engine|machine\\w*|mechanism\\w*|how it works", "gear"],
   ["global|world|countries|country|international|trade|tariff\\w*|import\\w*|export\\w*|foreign", "globe"], ["contract\\w*|law|laws|legal|rule|rules|regulat\\w*|policy|policies|form|forms|paperwork", "document"],
   ["news|headline\\w*|report\\w*|announce\\w*", "newspaper"], ["podcast\\w*|interview\\w*|said|says|speech", "mic"], ["advertis\\w*|marketing|promot\\w*|brand\\w*", "megaphone"],
-  ["photo\\w*|camera|video\\w*|creator\\w*|influencer\\w*|content", "camera"], ["idea\\w*|innovat\\w*|invent\\w*|founded|founder\\w*|startup\\w*|entrepreneur\\w*", "bulb"],
+  ["photo\\w*|camera|video\\w*|creator\\w*|influencer\\w*|content", "camera"], ["idea\\w*|innovat\\w*|invent\\w*|founded|founder\\w*|startup\\w*|entrepreneur\\w*|venture capital\\w*", "bulb"], ["annuit\\w*", "handCoin"], ["gross domestic product|gdp|economic output", "factory"], ["day trad\\w*", "chartUp"], ["bonds?", "document"],
   ["research\\w*|analy\\w*|stud\\w*|check\\w*|compare\\w*|search\\w*|find|found", "magnifier"], ["attract\\w*|draw\\w* in|pull\\w*", "magnet"],
   ["vs|versus|difference|choice|choose|balance\\w*|trade-?off", "scale"],
   ["money|pay|pays|paid|payment\\w*|debt\\w*|earn\\w*|profit\\w*|revenue", "coins"],
@@ -202,7 +202,7 @@ export function pickMotifs(line, topic = "", recent = []) {
   return opts.find((o) => !recent.includes(o[0])) || opts[0];
 }
 
-const WEAK = /^(now|see|look\w*|watch\w*|notice\w*|track\w*|monitor\w*|find|found|good|great|best|yes|hard|early|years?|decades?|where|states?|regions?|free|power|rates?|said|says|reports?|reported|data|numbers|process\w*|systems?|think\w*|smart|cares?|caring|love\w*|steps?|progress|reach\w*|finish\w*|achiev\w*|pieces?|missing|aim|plans?|planning|deal|check\w*|compar\w*|stud\w*|cuts?|cutting|reduc\w*|stack|higher|fall|falls|bets?|hot|stable|access|keys?|win|wins|won|start small|seed|grow|growing|share of|split|portion|slice|people|public|engine|machines?|digital|online|content|brand\w*|promot\w*|choice|choose|balance\w*|interest|money|pay|pays|paid|earn\w*|guide|direction|strategy|map|where|location\w*|search\w*|find|research\w*|analy\w*|learn\w*|books?|study|sale|deals?|attract\w*|pull\w*|rest|passive|urgent|challeng\w*|health\w*|mind\w*|habit\w*|brain|form|forms|rule|rules|recommend\w*|approve\w*)$/;
+const WEAK = /^(chairman|ceo|chief executive|executives?|now|see|look\w*|watch\w*|notice\w*|track\w*|monitor\w*|find|found|good|great|best|yes|hard|early|years?|decades?|where|states?|regions?|free|power|rates?|said|says|reports?|reported|data|numbers|process\w*|systems?|think\w*|smart|cares?|caring|love\w*|steps?|progress|reach\w*|finish\w*|achiev\w*|pieces?|missing|aim|plans?|planning|deal|check\w*|compar\w*|stud\w*|cuts?|cutting|reduc\w*|stack|higher|fall|falls|bets?|hot|stable|access|keys?|win|wins|won|start small|seed|grow|growing|share of|split|portion|slice|people|public|engine|machines?|digital|online|content|brand\w*|promot\w*|choice|choose|balance\w*|interest|money|pay|pays|paid|earn\w*|guide|direction|strategy|map|where|location\w*|search\w*|find|research\w*|analy\w*|learn\w*|books?|study|sale|deals?|attract\w*|pull\w*|rest|passive|urgent|challeng\w*|health\w*|mind\w*|habit\w*|brain|form|forms|rule|rules|recommend\w*|approve\w*)$/;
 
 export function conceptsOf(text, topic = "", max = 3) {
   const found = [];
