@@ -1098,9 +1098,13 @@ $("scenes").addEventListener("input", (e) => {
   // Re-check an edited fact against the evidence already gathered (instant, on the phone).
   if (line.check) line.check = { ...line.check, stale: true };
   clearTimeout(line.recheck);
-  if (state.plan.fact?.ctx) line.recheck = setTimeout(async () => {
+  const plan = state.plan, ctx = plan.fact?.ctx;
+  if (ctx) line.recheck = setTimeout(async () => {
+    // The plan can be closed or replaced while this waits: check against the evidence it was typed for, and
+    // only touch the screen if that plan is still the one shown.
     const { checkLine } = await factModule();
-    await checkLine(line, +i, state.plan.fact.ctx);
+    await checkLine(line, +i, ctx);
+    if (state.plan !== plan) return;
     const badge = document.querySelector(`[data-fact="${i}"]`);
     if (badge) badge.outerHTML = factBadge(line, +i);
     updateEstimate();

@@ -141,6 +141,10 @@ export function isDefinition(text, topic) {
   const head = words(text).slice(0, 14).join(" ");
   const m = topicRe(topic).exec(head);
   if (!m || ADVICE_START.test(text)) return false;
+  // The subject as a modifier is another subject: "Hedge fund replication is…" doesn't define a hedge fund.
+  const after = head.slice(m.index + m[0].length), next = after.match(/^\s+([a-z][\w-]*)\s+(?:is|are|was|were|means|refers|describes)\b/);
+  // (A word for what kind of thing it is still defines it: "A 401(k) plan is…", "A Roth IRA account is…".)
+  if (next && !/ly$|^(?:also|still|itself|themselves|now|then|thus|today|plans?|accounts?|cards?|funds?|loans?|programs?|programmes?|schemes?|systems?|contracts?|certificates?|policy|policies|products?|vehicles?|arrangements?|instruments?|securit(?:y|ies)|notes?|bonds?|shares?|stocks?|options?|strateg(?:y|ies)|methods?|process|benefits?|payments?|insurance|coverage|rates?|scores?|reports?|ratios?|index|indices|market|currency|tokens?|coins?|networks?)$/.test(next[1])) return false;
   return /^[^.;:]{0,45}?\s+(?:(?:(?:is|are|was|were)(?: also)?|(?:can|may)(?: also)? be) (?:(?:a|an|the)\s+)?(?:(?:common|general|broad|informal|technical|popular|legal)\s+)?(?:a|an|the|any|one|when|what|how|money|digital|terms?|names?|words?)\b|means\b|refers to\b|describes\b)/.test(head.slice(m.index + m[0].length));
 }
 export const isAdvice = (t) => ADVICE_START.test(t) || /\byou (should|can|could|need)\b/i.test(t);

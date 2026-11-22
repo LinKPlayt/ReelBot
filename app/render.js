@@ -584,15 +584,45 @@ function overlay(title, brand, accent, handle = "", logo = null) {
   return ov;
 }
 
+// Words a caption shouldn't end on: "STAYS EASY TO" reads as cut off. And a number belongs with its unit.
+const CAP_WEAK = /^(?:a|an|the|of|to|in|for|by|with|and|or|but|nor|that|which|who|at|on|from|as|is|are|was|were|be|its|their|your|my|our|his|her|this|these|those|than|into|over|if|when|so|can|will|would|could|should|not|no|per|about|up|very|just)$/i;
+const CAP_UNIT = /^(?:percent|%|billion|million|trillion|thousand|dollars?|years?|months?|weeks?|days?|hours?|points?|times|basis|cents?)\b/i;
+
+// Captions in short phrases, cut where a reader would pause: each sentence or clause (ended by punctuation) is
+// split into chunks of up to maxWords words / maxChars characters, choosing the cuts that read best (fewest
+// chunks, not ending on "the" or "to", not parting "9" from "percent", at the voice's pauses, no lone word left
+// over) rather than cutting wherever the limit happens to fall.
 export function chunkWords(words, maxWords = 3, maxChars = 16) {
-  const chunks = []; let cur = [];
-  words.forEach((w, i) => {
-    const len = cur.reduce((n, j) => n + words[j].text.length + 1, 0);
-    if (cur.length && (cur.length >= maxWords || len + w.text.length > maxChars)) { chunks.push(cur); cur = []; }
-    cur.push(i);
-    if (/[.!?,:;]$/.test(w.text)) { chunks.push(cur); cur = []; }
-  });
-  if (cur.length) chunks.push(cur);
+  const chunks = [];
+  const fits = (a, b) => b - a <= maxWords && (b - a === 1 || words.slice(a, b).reduce((n, w) => n + w.text.length + 1, -1) <= maxChars);
+  const gap = (i) => (words[i + 1] ? words[i + 1].start - words[i].end : 0);
+  const cost = (a, b, s, e) => {
+    let c = 1;
+    if (b < e) {
+      const last = words[b - 1].text.replace(/[^\w%']/g, "");
+      if (CAP_WEAK.test(last)) c += 3;
+      if (/\d/.test(last) && CAP_UNIT.test(words[b].text.replace(/^[^\w%]+/, ""))) c += 4;
+      if (gap(b - 1) > 0.15) c -= 0.5;
+    }
+    for (let i = a; i < b - 1; i++) if (gap(i) > 0.3) c += 2;
+    if (b - a === 1 && e - s > 1) c += 1.2;
+    return c;
+  };
+  const segment = (s, e) => {
+    const best = [0], from = [s];
+    for (let b = s + 1; b <= e; b++) {
+      best[b - s] = Infinity;
+      for (let a = b - 1; a >= s && fits(a, b); a--) {
+        const c = best[a - s] + cost(a, b, s, e);
+        if (c < best[b - s]) { best[b - s] = c; from[b - s] = a; }
+      }
+    }
+    const out = [];
+    for (let b = e; b > s; b = from[b - s]) out.unshift(Array.from({ length: b - from[b - s] }, (_, k) => from[b - s] + k));
+    return out;
+  };
+  let s = 0;
+  words.forEach((w, i) => { if (/[.!?,:;]$/.test(w.text) || i === words.length - 1) { chunks.push(...segment(s, i + 1)); s = i + 1; } });
   return chunks;
 }
 

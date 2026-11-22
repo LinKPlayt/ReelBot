@@ -10,6 +10,89 @@ before and after on the same inputs, and add tests so it can't come back.
 
 ---
 
+## v66 · Visuals + narration + scripts · Captions in phrases, tickers spelled, definitions cut cleanly
+
+**How it was found.** A contact sheet of the Index fund render (one frame every 2 s); the news headlines in the
+saved snapshots read by the natural voice and transcribed by Whisper; "Your topic" scripts for 12 subjects.
+
+### Visuals: captions that read like phrases (`app/render.js`, `chunkWords`)
+
+**Weakest.** Captions were cut greedily: three words, or 16 characters, then cut wherever the limit fell. The
+sheet showed "BY CREATING AN", "MIRRORS THE", "THAT SCREEN FOR". Over the 284 built-in and news lines, 22.1% of
+caption chunks ended on a word like "the", "to", "an" or "for", with the rest of the phrase on the next screen.
+
+**Changed.** Each sentence or clause (ended by punctuation, as before) is split by a small dynamic program over the
+same limits. Each chunk costs 1, plus:
+- 3 for ending on a function word ("the", "to", "of"…);
+- 4 for parting a number from its unit ("9 | percent");
+- 2 for a pause inside the chunk; a cut at the voice's pause costs 0.5 less;
+- 1.2 for a lone word when the clause has more.
+
+**Measured** (same 284 lines, same timings; `scratchpad/cap2/m.mjs`):
+
+| | Before | After |
+|---|---|---|
+| Chunks ending on a function word | 378 of 1712 (22.1%) | 60 of 1784 (3.4%) |
+| Number split from its unit | 2 | 0 |
+| Chunks per line | 6.03 | 6.28 |
+
+E.g. "Here's how to | stop that from | happening." → "Here's how | to stop that | from happening.";
+"Shares of IREN | jumped 9 percent | after the deal,". The remaining 3.4% are where the 16-character limit
+leaves no better cut ("protect the | biggest").
+
+### Narration: tickers that look like words (`app/script.js`, `spellTickers`)
+
+**Weakest** (queue item 3). A ticker that looks like a word was read as the word. Whisper on the natural voice:
+"LITE, IREN, SNDK and NVDA are in focus" → "**Light, Iron**, SNDK and NVDA…"; "Shares of IREN jumped" → "Shares of
+**iron** jumped"; "Lumentum (LITE)" → "Lumentum's **light**"; "CRWV, IREN, NBIS" → "CRWV, **iron, and BIS**".
+
+**Changed.** Where the text says a token is a ticker, it's spelled like any other acronym (dots, as v57):
+- a cashtag ("$LITE");
+- an exchange or a company name before it ("(NASDAQ: LITE)", "Lumentum (LITE)");
+- "shares of IREN", "IREN stock";
+- a list of three or more all-caps names with at least one clear ticker ("LITE, IREN, SNDK, NVDA").
+
+Abbreviations said as words (NATO, OPEC, FAANG, COLA…) and capitals for stress ("NOT", "BUY, SELL, HOLD") are left.
+
+**Measured** (Whisper small.en on the same 7 lines): after, LITE, IREN and NBIS are transcribed as letters
+("LITE, IREAN", "Shares of IREAN", "Lumentum, L.I.T.", "CRWV, IREN, NBIS"); no ticker is heard as a word. Over all
+1,771 library and snapshot texts the rule changed only 4: the two ticker lists above, "MSTR, BMNR, ASST" and
+"Upwork Inc. (UPWK)". No false positives.
+
+Checked and not changed: GOP and DOL were already spelled by the natural voice (phonemes "ʤˌiˌOpˈi", "dˌiˌOˈɛl").
+
+### Scripts: definitions cut at a clause, on the right subject (`app/research.js`, `app/story.js`)
+
+**Weakest** (queue item 8).
+- Day trading: the definition was cut mid-phrase ("…a form of speculation in securities **in.**"), because the
+  cut came before "which" and left its preposition behind.
+- Hedge fund: the video defined "Hedge fund **replication**". The real definition was over 34 words with no
+  comma to cut at, so it was dropped.
+
+**Changed.**
+- `trimDefinition` cuts the preposition along with its "which"/"whom".
+- A definition still too long ends at a second clause joined by "and" ("…a pooled investment fund that holds
+  liquid assets and that makes use of…").
+- `isDefinition` turns down the subject used as a modifier ("Hedge fund replication is…"); adverbs and "itself"
+  still pass.
+
+**Measured** (the same subjects, real Wikipedia research):
+- "Day trading is a form of speculation in securities."
+- "A hedge fund is a pooled investment fund that holds liquid assets."
+- The other 9 subjects that loaded open on the same definition as before.
+
+### Also fixed: the review editor's fact re-check (queue item 12)
+
+The re-check of an edited line waited 700 ms and then read `state.plan.fact.ctx`. If the plan had been closed or
+replaced, that threw an uncaught error. Now the check runs against the evidence it was typed for, and the screen
+is only touched while that plan is still the one shown.
+
+**Tests.** `tests/web/logic.mjs`, "tickers that look like words, definitions cut cleanly (v66)": tickers spelled in
+each context, words in capitals left alone, the two definitions, and the modifier case. The punch-caption test
+still holds: two words at most, and every word is shown.
+
+---
+
 ## v65 · Scripts · The same scaffolding doesn't open every video
 
 **How it was found.** The spoken lead-ins of 33 "Your topic" scripts, as viewers hear them after `dramatize()`.
@@ -982,7 +1065,7 @@ Found on the live feed right after release and added: a trailing fragment that p
    exports in October surge 20.5%"). A spoken rewrite needs care to stay faithful.
 2. **Emphasis.** The voice gives every word the same weight; key numbers and contrast words ("but", "only",
    "never") could be stressed (Kokoro takes stress marks in its phonemes).
-3. **Names and tickers that read as words.** In the v57 run the remaining real errors in news are proper nouns and
+3. **Names that read as words** (tickers done, v66). In the v57 run the remaining real errors in news are proper nouns and
    word-like tickers: IREN → "iron", LITE → "light", VanEck → "van act", Loosdog, Goolsbee → "Goolsby". Ticker
    context (a list of all-caps tokens) could tell a ticker from a word.
 4. **Captions on the hardest lines.** Headlines full of numbers, tickers and names still have 21–30% of words
@@ -997,8 +1080,8 @@ Found on the live feed right after release and added: a trailing fragment that p
 7. **Literal pictures (mostly done, v64).** "Long-term habits build wealth" draws a hammer ("build"); a verb used figuratively still
    picks its literal object.
 8. **"Your topic" leftovers (v59).**
-   - Hedge fund opens on the wrong subject ("Hedge fund replication is…").
-   - Day trading's definition is cut short ("…speculation in securities in.").
+   - (Done, v66) Hedge fund opened on the wrong subject ("Hedge fund replication is…").
+   - (Done, v66) Day trading's definition was cut short ("…speculation in securities in.").
    - Worked examples are read out of context (Dollar cost averaging).
    - Local rules without a country name (Sweden's ISK) aren't caught.
    - Encyclopedia register remains ("is composed of several layers").
@@ -1008,7 +1091,7 @@ Found on the live feed right after release and added: a trailing fragment that p
    illustration; other searches (the topic's Wikipedia image, related subjects) could find real photos that fit.
 11. **A measuring tool in the repo.** The Whisper/DNSMOS (v57) and forced-alignment (v58) checks live outside the
    repository; adding them under `scripts/` would let every narration change be measured the same way.
-12. **A review-editor timer.** `app/main.js` rechecks an edited line in a timeout that reads `state.plan.fact`
+12. **(Done, v66.) A review-editor timer.** `app/main.js` rechecks an edited line in a timeout that reads `state.plan.fact`
    after the plan can be cleared (an occasional uncaught error in the fuzz test). UI code, outside these three areas.
 
 (Done: the same story told three times and ticker lists read aloud, v61. AAPL-like tickers, queue item 5 before v57: spelled letters now come from a table, so "A.A.P.L." keeps both

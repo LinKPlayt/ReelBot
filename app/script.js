@@ -41,6 +41,7 @@ export function speakable(text) {
   t = t.replace(/(\d(?:[.,]\d+)?)((?: percent| dollars)?)\s?[–-]\s?(?=\$?\d)/g, "$1$2 to ").replace(/(\d)x\b/g, "$1 times");
   t = t.replace(/\b1099s?\b(?= form|s\b| income|$|[.,;])/g, (m) => (m.endsWith("s") ? "ten ninety-nines" : "ten ninety-nine")).replace(/\b529 plan/g, "five twenty-nine plan");
   t = t.replaceAll("S&P", "S and P").replaceAll("&", " and ").replace(/\b401\(?k\)?/gi, "four oh one k").replace(/\b403\(?b\)?/gi, "four oh three b").replace(/\b457\(?b\)?/gi, "four fifty-seven b");
+  t = spellTickers(t);
   t = t.split(/\s+/).map((w) => {
     const core = w.replace(/^[,.!?;:"'()]+|[,.!?;:"'()]+$/g, "");
     if (ACRONYMS[core]) return w.replace(core, ACRONYMS[core]);
@@ -54,6 +55,28 @@ export function speakable(text) {
     return unsayable(core) && /[AEIOU]/.test(core) ? w.replace(core, core.split("").join(".") + ".").replace(/\.\.$/, ".") : w;
   }).join(" ");
   return t.replace(/\s+/g, " ").trim();
+}
+
+// A ticker that looks like a word is read as the word ("IREN" -> "iron", "LITE" -> "light"), so where the text
+// says it's a ticker it's spelled like any other: a cashtag ("$LITE"), an exchange or a company's name before it
+// ("(NASDAQ: LITE)", "Lumentum (LITE)"), "shares of IREN", "IREN stock", or a list of three or more all-caps names
+// ("LITE, IREN, SNDK, NVDA"). Abbreviations said as words (NATO, OPEC, FAANG) are left as they are.
+const SAID_AS_WORD = new Set(["NATO", "NASA", "OPEC", "FIFA", "COVID", "NASDAQ", "FAANG", "MAANG", "MAGA", "SPAC", "UNESCO", "UNICEF", "SWIFT", "LIBOR", "SOFR", "SALT", "COLA", "REIT", "FICO", "HELOC", "DAX", "FTSE"]);
+const dotted = (w) => w.split("").join(".") + ".";
+function spellTicker(w, next = "") {
+  if (!/^[A-Z]{2,5}$/.test(w) || ACRONYMS[w] || SAID_AS_WORD.has(w) || !/[AEIOU]/.test(w)) return w;
+  const d = dotted(w);
+  return next.startsWith(".") ? d.slice(0, -1) : d;
+}
+export function spellTickers(t) {
+  // A list of all-caps names: three or more joined by commas or "and", one of them clearly a ticker ("SNDK").
+  t = t.replace(/\b[A-Z]{2,5}(?:(?:,\s*|,?\s+and\s+)[A-Z]{2,5}\b){2,}/g, (list) => (list.match(/[A-Z]{2,5}/g).some(unsayable) ? list.replace(/[A-Z]{2,5}/g, (w) => spellTicker(w)) : list));
+  t = t.replace(/\$([A-Z]{2,5})\b(\.?)/g, (_, w, dot) => spellTicker(w, dot) + dot);
+  t = t.replace(/\(((?:NASDAQ|NYSE|NYSEARCA|AMEX|TSX|OTC|LSE)\s*:\s*)?([A-Z]{2,5})\)/g, (m, ex, w, at, str) =>
+    ex || /[A-Z][\w&.'-]*\s*$/.test(str.slice(0, at)) ? `(${ex || ""}${spellTicker(w)})` : m);
+  t = t.replace(/\b(shares of|stake in)\s+([A-Z]{2,5})\b(?=(\.?))/gi, (_, a, w, dot) => `${a} ${spellTicker(w, dot)}`);
+  t = t.replace(/\b([A-Z]{2,5})(?=\s+(?:stock|stocks|shares|share price)\b)/gi, (m, w) => (/^[A-Z]+$/.test(w) ? spellTicker(w) : m));
+  return t;
 }
 
 // An all-caps token that can't be said as a word: no vowel, three consonants in a row (except an English onset

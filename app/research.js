@@ -128,8 +128,13 @@ export function trimDefinition(s) {
   // Drop comma asides before the main verb: "X, in some places known as Y, is …" -> "X is …"
   t = t.replace(/^([^,]{3,60}),[^,]{3,90}, (is|are|refers to)\b/, "$1 $2");
   // Cut after the first clause that follows the verb.
-  const m = t.match(/^(.{5,}?\b(?:is|are|refers to)\b.{10,}?)(?:,| or by | which | that is | while )/);
+  // A preposition belongs to its "which" ("speculation in securities in which a trader…"): it goes too.
+  const m = t.match(/^(.{5,}?\b(?:is|are|refers to)\b.{10,}?)(?:,| or by | (?:(?:in|by|of|for|through|to|with|at|on|from|under|during) )?(?:which|whom) | that is | while )/);
   if (t.split(/\s+/).length > 34 && m) t = m[1].trim() + ".";
+  // Still too long: end at a second clause joined by "and" ("a pooled fund that holds liquid assets and that makes
+  // use of complex trading…" -> "a pooled fund that holds liquid assets.").
+  const and = t.match(/^(.{5,}?\b(?:is|are|refers to)\b(?:\s+\S+){5,}?) and (?:that|which|is|are|uses?|makes?|has|have|can)\b/);
+  if (t.split(/\s+/).length > 34 && and) t = and[1].trim() + ".";
   if (!/\bor\b/.test(t)) t = t.replace(/\beither (?=by|to|for|in|as)\b/, "");   // "either" with its "or" cut off
   const n = t.split(/\s+/).length;
   return n >= 6 && n <= 34 && /\b(is|are|refers to)\b/.test(t) ? t : "";

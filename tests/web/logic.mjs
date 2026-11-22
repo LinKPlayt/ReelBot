@@ -732,5 +732,24 @@ export default async function ({ t, newPage }) {
   t.ok(v65.tipKinds >= 3 && v65.topTip <= 6, "the tip's lead-in varies across videos (no phrasing on more than half of 12)", JSON.stringify(v65));
   t.ok(v65.noLead >= 3 && v65.noLead <= 9, "the definition goes without a lead-in in some videos instead of \"Simply put\" every time", JSON.stringify(v65));
   t.ok(v65.same && v65.tipFlag, "a subject always reads the same way, and the tip keeps its WHAT TO DO marker whatever its wording", JSON.stringify(v65));
+  t.section("Logic: tickers that look like words, definitions cut cleanly (v66)");
+  const v66 = await page.evaluate(async () => {
+    const S = await import("./app/script.js"), R = await import("./app/research.js"), ST = await import("./app/story.js");
+    return {
+      said: ["Nasdaq Futures Slide — LITE, IREN, SNDK, NVDA In Focus", "Shares of IREN jumped 9% after the deal.", "Lumentum (LITE) rallies.", "Buy $LITE now?",
+        "BUY, SELL, HOLD the stock", "OPEC and NATO meet", "It is NOT a good idea", "Circle and DAI and USDS tokens"].map(S.speakable),
+      trim: [R.trimDefinition("Day trading is a form of speculation in securities in which a trader buys and sells a financial instrument within the same trading day, such that all positions are closed before the market closes for the trading day to avoid unmanageable risks."),
+        R.trimDefinition("A hedge fund is a pooled investment fund that holds liquid assets and that makes use of complex trading and risk management techniques to aim to improve investment performance and insulate returns from market risk among other investment goals.")],
+      def: [ST.isDefinition("Hedge fund replication is the collective name given to a number of methods.", "Hedge fund"), ST.isDefinition("A hedge fund is a pooled investment fund.", "Hedge fund"),
+        ST.isDefinition("Bitcoin itself is a digital currency.", "Bitcoin")],
+    };
+  });
+  t.ok(/L\.I\.T\.E\., I\.R\.E\.N\./.test(v66.said[0]) && /Shares of I\.R\.E\.N\. jumped/.test(v66.said[1]) && /\(L\.I\.T\.E\.\)/.test(v66.said[2]) && /Buy L\.I\.T\.E\. now/.test(v66.said[3]),
+    "a ticker that looks like a word is spelled where the text says it's a ticker (IREN isn't \"iron\", LITE isn't \"light\")", JSON.stringify(v66.said));
+  t.ok(v66.said[4] === "BUY, SELL, HOLD the stock" && v66.said[5] === "oh peck and NATO meet" && v66.said[6] === "It is NOT a good idea" && /DAI and U\.S\.D\.S\./.test(v66.said[7]),
+    "words in capitals (BUY, NOT, NATO, DAI) are still read as words", JSON.stringify(v66.said));
+  t.ok(v66.trim[0] === "Day trading is a form of speculation in securities." && v66.trim[1] === "A hedge fund is a pooled investment fund that holds liquid assets.",
+    "a long definition is cut at a clause, never mid-phrase (\"…in securities in.\")", JSON.stringify(v66.trim));
+  t.ok(v66.def.join() === "false,true,true", "\"Hedge fund replication is…\" isn't taken as the definition of a hedge fund", JSON.stringify(v66.def));
   await page.context().close();
 }
